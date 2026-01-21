@@ -23,6 +23,10 @@ db_connection = os.getenv('DB_CONNECTION_STRING')
 db_username = os.getenv('DB_USERNAME')
 db_password = os.getenv('DB_PASSWORD')
 wallet_password = os.getenv('WALLET_PASSWORD')
+wallet_location = os.getenv('WALLET_LOCATION')
+
+print("ADB wallet location: ",os.environ['WALLET_LOCATION'])
+print("files in: ", os.listdir(os.environ['TNS_ADMIN']))
 
 if not tns_admin:
     print("   ✗ TNS_ADMIN not set in .env file")

@@ -453,7 +453,7 @@ def load_claims_from_database():
     try:
         data = request.json
         table_name = data.get('table_name', 'CLAIMS')
-        limit = data.get('limit', 50)
+        limit = data.get('limit', 2)
         auto_analyze = data.get('auto_analyze', True)
         
         # Ensure connection
@@ -531,7 +531,7 @@ def load_claims_progressive():
             return jsonify({'error': 'No JSON data provided'}), 400
             
         table_name = data.get('table_name', 'CLAIMS')
-        limit = data.get('limit', 50)
+        limit = data.get('limit', 2)
         auto_analyze = data.get('auto_analyze', True)
         
         def generate():

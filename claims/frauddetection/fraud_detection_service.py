@@ -9,6 +9,9 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
+import oci
+from oci.generative_ai_inference.models import GenerateTextDetails
+
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +26,27 @@ class FraudDetectionService:
         """Initialize the fraud detection service with OpenAI client"""
         self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         self.model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
+
+        # OCI GenAI setup
+        oci_config_path = os.getenv('OCI_CONFIG_FILE')
+        oci_profile = os.getenv('OCI_PROFILE')
+        self.oci_enabled = False
+        try:
+            self.oci_config = oci.config.from_file(oci_config_path, oci_profile)
+            self.oci_genai_endpoint = os.getenv(
+                'OCI_GENAI_ENDPOINT')  # e.g. "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+            self.oci_compartment_id = os.getenv('OCI_COMPARTMENT_ID')
+            self.oci_model_id = os.getenv('OCI_GENAI_MODEL_ID')  # Model OCID
+            if self.oci_genai_endpoint and self.oci_compartment_id and self.oci_model_id:
+                self.oci_genai_client = oci.generative_ai_inference.GenerativeAiClient(
+                    config=self.oci_config,
+                    service_endpoint=self.oci_genai_endpoint
+                )
+                self.oci_enabled = True
+        except Exception as e:
+            print(f"Warning: OCI Generative AI not fully configured: {e}")
+            self.oci_genai_client = None
+
         
     def analyze_claim(self, claim_data: Dict) -> Dict:
         """

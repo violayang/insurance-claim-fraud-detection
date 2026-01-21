@@ -8,6 +8,7 @@ import json
 from typing import List, Dict, Optional
 from datetime import datetime
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -140,7 +141,7 @@ class DatabaseConnector:
             print(f"Error getting tables: {e}")
             return ['CLAIMS', 'INSURANCE_CLAIMS', 'CLAIM_DETAILS']
     
-    def load_claims_data(self, table_name: str = None, limit: int = 100, include_approved: bool = False) -> List[Dict]:
+    def load_claims_data(self, table_name: str = None, limit: int = 2, include_approved: bool = False) -> List[Dict]:
         """
         Load claims data from database
         
@@ -322,13 +323,14 @@ def get_available_claim_tables(sql_executor) -> List[str]:
     """
     try:
         result = sql_executor(QUERIES['list_tables'])
+        print("SQL query statement to load claims from table: \nQUERIES['list_tables']", )
         return [row['TABLE_NAME'] for row in result]
     except Exception as e:
         print(f"Error getting tables: {str(e)}")
         return []
 
 
-def load_claims_from_table(sql_executor, table_name: str, limit: int = 100) -> List[Dict]:
+def load_claims_from_table(sql_executor, table_name: str, limit: int = 2) -> List[Dict]:
     """
     Load claims from specified table
     
@@ -341,6 +343,7 @@ def load_claims_from_table(sql_executor, table_name: str, limit: int = 100) -> L
         List of claim records
     """
     try:
+
         query = QUERIES['get_claims'].format(table_name=table_name, limit=limit)
         result = sql_executor(query)
         return result
