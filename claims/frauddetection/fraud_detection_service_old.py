@@ -1,6 +1,6 @@
 """
 StateFarm AI-Powered Fraud Detection Service
-Uses OCI GenAI for intelligent fraud analysis replacing heuristic logic
+Uses OpenAI for intelligent fraud analysis replacing heuristic logic
 """
 
 import os
@@ -10,7 +10,7 @@ from datetime import datetime
 from openai import OpenAI
 from dotenv import load_dotenv
 import oci
-from oci.generative_ai_inference.models import ChatDetails
+from oci.generative_ai_inference.models import GenerateTextDetails
 
 
 # Load environment variables
@@ -18,146 +18,89 @@ load_dotenv()
 
 class FraudDetectionService:
     """
-    AI-powered fraud detection service using OCI Generative AI
+    AI-powered fraud detection service using OpenAI GPT-4
     Replaces heuristic-based logic with advanced language model analysis
     """
-
-
+    
     def __init__(self):
+        """Initialize the fraud detection service with OpenAI client"""
+        self.client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        self.model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
+
         # OCI GenAI setup
         oci_config_path = os.getenv('OCI_CONFIG_FILE')
-        oci_profile = os.getenv('OCI_PROFILE', 'DEFAULT')
+        oci_profile = os.getenv('OCI_PROFILE')
         self.oci_enabled = False
         try:
             self.oci_config = oci.config.from_file(oci_config_path, oci_profile)
-            self.oci_genai_endpoint = os.getenv('OCI_GENAI_ENDPOINT')  # e.g. "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+            self.oci_genai_endpoint = os.getenv(
+                'OCI_GENAI_ENDPOINT')  # e.g. "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
             self.oci_compartment_id = os.getenv('OCI_COMPARTMENT_ID')
             self.oci_model_id = os.getenv('OCI_GENAI_MODEL_ID')  # Model OCID
-            # print("oci genai service endpoint, compartment id, model id all loaded")
             if self.oci_genai_endpoint and self.oci_compartment_id and self.oci_model_id:
-                self.oci_genai_client = oci.generative_ai_inference.GenerativeAiInferenceClient(
+                self.oci_genai_client = oci.generative_ai_inference.GenerativeAiClient(
                     config=self.oci_config,
                     service_endpoint=self.oci_genai_endpoint
                 )
                 self.oci_enabled = True
-
         except Exception as e:
             print(f"Warning: OCI Generative AI not fully configured: {e}")
             self.oci_genai_client = None
 
-    def analyze_claim_test(self):
-        """
-        test if OCI GenAI client is ready
-        """
-        try:
-
-            chat_detail = oci.generative_ai_inference.models.ChatDetails()
-
-            content = oci.generative_ai_inference.models.TextContent()
-            content.text = "How do big insurance company deal with claim fraud detection?"
-            message = oci.generative_ai_inference.models.Message()
-            message.role = "USER"
-            message.content = [content]
-            chat_request = oci.generative_ai_inference.models.GenericChatRequest()
-            chat_request.api_format = oci.generative_ai_inference.models.BaseChatRequest.API_FORMAT_GENERIC
-            chat_request.messages = [message]
-            chat_request.max_tokens = 2048
-            chat_request.temperature = 1
-            chat_request.frequency_penalty = 0
-            chat_request.presence_penalty = 0
-            chat_request.top_p = 1
-            chat_request.top_k = 0
-
-            chat_detail.serving_mode = oci.generative_ai_inference.models.OnDemandServingMode(
-                model_id=self.oci_model_id)
-            chat_detail.chat_request = chat_request
-            chat_detail.compartment_id = self.oci_compartment_id
-
-            chat_response = self.oci_genai_client.chat(chat_detail)
-
-            # Print result
-            print("**************************Chat Result**************************")
-            print(chat_response.data.chat_response.choices[0].message.content)
-
-        except Exception as e:
-            print(f"Error: OCI Generative AI client if not ready: {e}")
-
         
     def analyze_claim(self, claim_data: Dict) -> Dict:
         """
-        Analyze an insurance claim for fraud using OCI GenAI.
+        Analyze an insurance claim for fraud using OpenAI
+        
         Args:
             claim_data: Dictionary containing claim information
+            
         Returns:
             Dictionary with fraud analysis results
         """
-
-        if not self.oci_enabled:
-            return {
-                'error': 'OCI Generative AI is not configured or enabled.',
-                'fraud_score': 0,
-                'risk_level': 'ERROR',
-                'timestamp': datetime.now().isoformat()
-            }
         try:
+            # Prepare the prompt for OpenAI
             prompt = self._create_fraud_analysis_prompt(claim_data)
-            # print(" The claim prompt :\n", prompt)
-
-            # Compose the chat detail for OCI GenAI gpt-oss model
-            system_prompt = """You are an expert insurance fraud detection analyst for StateFarm. 
-                                    Analyze claims for potential fraud indicators and provide detailed insights.
-                                    Return your analysis in JSON format with the following structure:
-                                    {
-                                        "fraud_score": <float 0-100>,
-                                        "risk_level": "<LOW|MEDIUM|HIGH|CRITICAL>",
-                                        "fraud_indicators": [<list of detected indicators>],
-                                        "confidence": <float 0-100>,
-                                        "reasoning": "<detailed explanation>",
-                                        "recommended_actions": [<list of recommended actions>],
-                                        "red_flags": [<specific concerning patterns>]
-                                    }"""
-            message1 = oci.generative_ai_inference.models.Message(
-                role = "SYSTEM",
-                content = [oci.generative_ai_inference.models.TextContent(
-                    text = system_prompt,
-                )]
+            
+            # Call OpenAI API
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are an expert insurance fraud detection analyst for StateFarm. 
+                        Analyze claims for potential fraud indicators and provide detailed insights.
+                        Return your analysis in JSON format with the following structure:
+                        {
+                            "fraud_score": <float 0-100>,
+                            "risk_level": "<LOW|MEDIUM|HIGH|CRITICAL>",
+                            "fraud_indicators": [<list of detected indicators>],
+                            "confidence": <float 0-100>,
+                            "reasoning": "<detailed explanation>",
+                            "recommended_actions": [<list of recommended actions>],
+                            "red_flags": [<specific concerning patterns>]
+                        }"""
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                temperature=0.3,  # Lower temperature for more consistent results
+                response_format={"type": "json_object"}
             )
-            message2 = oci.generative_ai_inference.models.Message(
-                role="USER",
-                content=[oci.generative_ai_inference.models.TextContent(
-                    text=prompt
-                )]
-            )
-
-            chat_request = oci.generative_ai_inference.models.GenericChatRequest(
-                api_format=oci.generative_ai_inference.models.BaseChatRequest.API_FORMAT_GENERIC,
-                messages=[message1, message2],
-                temperature=0.3,
-                top_p=1
-
-            )
-
-            chat_details = ChatDetails(
-                serving_mode=oci.generative_ai_inference.models.OnDemandServingMode(model_id=self.oci_model_id),
-                compartment_id=self.oci_compartment_id,
-                chat_request=chat_request
-            )
-
-            # Call the OCI GenAI API
-            response = self.oci_genai_client.chat(chat_details)
-            # Assume response.data.choices[0].message.content is a JSON string as required
-
-            analysis = json.loads(response.data.chat_response.choices[0].message.content[0].text)
-            # print("Chat Response: \n", analysis)
-
+            
+            # Parse the response
+            analysis = json.loads(response.choices[0].message.content)
+            
             # Add metadata
             analysis['timestamp'] = datetime.now().isoformat()
             analysis['claim_id'] = claim_data.get('claim_id', 'N/A')
-            analysis['model_used'] = 'oci-genai-gpt'
-            analysis['model_version'] = self.oci_model_id
-
+            analysis['model_used'] = 'openai'
+            analysis['model_version'] = self.model
+            
             return analysis
-
+            
         except Exception as e:
             return {
                 'error': str(e),
@@ -165,8 +108,6 @@ class FraudDetectionService:
                 'risk_level': 'ERROR',
                 'timestamp': datetime.now().isoformat()
             }
-
-
     
     def _create_fraud_analysis_prompt(self, claim_data: Dict) -> str:
         """Create a detailed prompt for fraud analysis"""
@@ -202,7 +143,7 @@ class FraudDetectionService:
         
         Analyze this claim thoroughly and provide your assessment.
         """
-
+        
         return prompt
     
     def batch_analyze_claims(self, claims: List[Dict]) -> List[Dict]:
@@ -316,7 +257,7 @@ class HybridFraudDetectionService:
         self.openai_service = FraudDetectionService()
         self.nvidia_service = NVIDIAFraudDetectionService()
         self.prefer_nvidia = os.getenv('PREFER_NVIDIA', 'false').lower() == 'true'
-
+    
     def analyze_claim(self, claim_data: Dict) -> Dict:
         """
         Analyze claim using available model
@@ -334,18 +275,17 @@ class HybridFraudDetectionService:
 if __name__ == "__main__":
     # Example usage
     service = FraudDetectionService()
-    hybrid_service = HybridFraudDetectionService()
     
     # Sample claim data
     sample_claim = {
-        'claim_id': 'CLM-2026-001',
+        'claim_id': 'CLM-2024-001',
         'claim_type': 'Auto Collision',
         'claim_amount': 15000,
-        'incident_date': '2026-01-15',
-        'filing_date': '2026-01-20',
+        'incident_date': '2024-01-15',
+        'filing_date': '2024-01-20',
         'policy_holder': 'John Doe',
         'policy_number': 'POL-123456',
-        'policy_start_date': '2026-01-10',
+        'policy_start_date': '2024-01-10',
         'previous_claims_count': 0,
         'years_as_customer': 0.1,
         'incident_location': 'Los Angeles, CA',
@@ -357,15 +297,7 @@ if __name__ == "__main__":
         'similar_claims_in_area': 3,
         'repair_provider': 'Quick Fix Auto Body'
     }
-
-    # print("Test OCI GenAI opt-oss-120b model")
-    # result = service.analyze_claim_test()
+    
     print("Analyzing claim with OpenAI...")
     result = service.analyze_claim(sample_claim)
-    print(result)
-    # print(json.dumps(result, indent=2))
-
-    # check HybridFraudDetection
-
-    # result = hybrid_service.analyze_claim(sample_claim)
-    # print(result)
+    print(json.dumps(result, indent=2))
