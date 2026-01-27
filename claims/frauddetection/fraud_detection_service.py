@@ -7,14 +7,27 @@ import os
 import json
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
+
+import pandas as pd
 from openai import OpenAI
 from dotenv import load_dotenv
 import oci
+from oci.signer import Signer
+import requests
 from oci.generative_ai_inference.models import ChatDetails
 
 
 # Load environment variables
 load_dotenv()
+
+# OCI Config
+config = oci.config.from_file("~/.oci/config") # replace with the location of your oci config file
+auth = Signer(
+  tenancy=config['tenancy'],
+  user=config['user'],
+  fingerprint=config['fingerprint'],
+  private_key_file_location=config['key_file']
+)
 
 class FraudDetectionService:
     """
@@ -32,6 +45,7 @@ class FraudDetectionService:
             self.oci_config = oci.config.from_file(oci_config_path, oci_profile)
             self.oci_genai_endpoint = os.getenv('OCI_GENAI_ENDPOINT')  # e.g. "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
             self.oci_compartment_id = os.getenv('OCI_COMPARTMENT_ID')
+            self.fd_model_endpoint = os.getenv('MODEL_DEPLOYMENT_ENDPOINT')
             self.oci_model_id = os.getenv('OCI_GENAI_MODEL_ID')  # Model OCID
             # print("oci genai service endpoint, compartment id, model id all loaded")
             if self.oci_genai_endpoint and self.oci_compartment_id and self.oci_model_id:
@@ -81,6 +95,27 @@ class FraudDetectionService:
 
         except Exception as e:
             print(f"Error: OCI Generative AI client if not ready: {e}")
+
+
+    def claim_fraud_detect(self, claim_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Classify if claim is potential fraud use classic machine learning model.
+        ML model:
+            Isolation Forest - unsupervised anomaly detection
+            Model Endpoint - OCI DS Model Deployment
+        """
+
+        try:
+            body = claim_df.values.tolist()
+            headers = {}  # header goes here
+            detect_result = requests.post(self.fd_model_endpoint, json=body, auth=auth, headers=headers).json()
+            return detect_result['prediction']
+
+        except Exception as e:
+            print(f"Error transform claim data: {e}")
+
+
+
 
         
     def analyze_claim(self, claim_data: Dict) -> Dict:
@@ -331,6 +366,8 @@ class HybridFraudDetectionService:
         return self.openai_service.analyze_claim(claim_data)
 
 
+
+
 if __name__ == "__main__":
     # Example usage
     service = FraudDetectionService()
@@ -341,7 +378,7 @@ if __name__ == "__main__":
         'claim_id': 'CLM-2026-001',
         'claim_type': 'Auto Collision',
         'claim_amount': 15000,
-        'incident_date': '2026-01-15',
+        'incident_date': '2026-01-02',
         'filing_date': '2026-01-20',
         'policy_holder': 'John Doe',
         'policy_number': 'POL-123456',
@@ -361,8 +398,12 @@ if __name__ == "__main__":
     # print("Test OCI GenAI opt-oss-120b model")
     # result = service.analyze_claim_test()
     print("Analyzing claim with OpenAI...")
-    result = service.analyze_claim(sample_claim)
-    print(result)
+    # result = service.analyze_claim(sample_claim)
+    # print(result)
+
+    inference_df = pd.read_csv("templates/sample_inference_data.csv")
+    print(service.claim_fraud_detect(inference_df.head(1)))
+
     # print(json.dumps(result, indent=2))
 
     # check HybridFraudDetection

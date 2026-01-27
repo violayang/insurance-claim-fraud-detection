@@ -1,0 +1,11 @@
+PREMIUM_AMOUNT,CLAIM_AMOUNT,AGE,TENURE,REPORT_DELAY_DAYS,loss_ratio,INSURANCE_TYPE_Life,INSURANCE_TYPE_Mobile,INSURANCE_TYPE_Motor,INSURANCE_TYPE_Property,INSURANCE_TYPE_Travel,INCIDENT_SEVERITY_Low,INCIDENT_SEVERITY_Medium,AUTHORITY_CONTACTED_Other,AUTHORITY_CONTACTED_Police,AUTHORITY_CONTACTED_Unknown,severity_claim_mismatch_1,missing_police_high_sev_1,high_claim_outlier_1
+128.43,2000,26,41,5,15.572685509616132,False,False,False,False,False,False,True,True,False,False,False,False,False
+92.98,3000,42,69,1,32.26500322650032,False,False,False,False,True,True,False,False,False,True,False,False,False
+159.81,27000,48,100,0,168.95062887178526,False,False,False,True,False,True,False,False,False,False,True,False,False
+104.49,10000,62,10,5,95.70293808019906,False,False,False,True,False,True,False,False,True,False,False,False,False
+182.28,17000,30,99,5,93.26311169629142,False,False,False,False,False,True,False,False,False,False,False,False,False
+78.36,76000,62,101,5,969.8825931597754,True,False,False,False,False,False,False,False,False,False,False,True,True
+133.0,5000,28,79,5,37.59398496240601,False,False,True,False,False,True,False,False,True,False,False,False,False
+68.6,87000,42,73,1,1268.2215743440233,True,False,False,False,False,False,False,False,False,True,False,True,True
+147.31,14000,39,79,0,95.03767564998982,False,False,False,False,False,False,True,False,False,False,False,False,False
+11.56,500,33,92,2,43.25259515570934,False,True,False,False,False,False,True,False,True,False,False,False,False

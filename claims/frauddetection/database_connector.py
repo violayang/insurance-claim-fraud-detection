@@ -164,15 +164,17 @@ class DatabaseConnector:
                 # Load all claims
                 query = f"""
                     SELECT * FROM {table_name}
-                    WHERE ROWNUM <= {limit}
-                    ORDER BY INCIDENT_DATE DESC
+                    WHERE LOWER(STATUS) = 'pending'
+                    AND ROWNUM <= 5
+                    ORDER BY REPORTED_DATE DESC
+                    
                 """
             else:
                 # Only load non-approved claims (exclude 'Approved' and 'Closed' status)
                 query = f"""
                     SELECT * FROM {table_name}
                     WHERE STATUS NOT IN ('Approved', 'Closed')
-                    AND ROWNUM <= {limit}
+                    AND ROWNUM <= 5
                     ORDER BY INCIDENT_DATE DESC
                 """
             
