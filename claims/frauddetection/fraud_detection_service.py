@@ -141,6 +141,8 @@ class FraudDetectionService:
             # Compose the chat detail for OCI GenAI gpt-oss model
             system_prompt = """You are an expert insurance fraud detection analyst for StateFarm. 
                                     Analyze claims for potential fraud indicators and provide detailed insights.
+                                    There's an additional Machine Learning model trained based on historical insurance claims to detect if a new submitted claim is potential fraud.
+                                    Take the ML model result in consideration when analyzing claims.
                                     Return your analysis in JSON format with the following structure:
                                     {
                                         "fraud_score": <float 0-100>,
@@ -149,7 +151,8 @@ class FraudDetectionService:
                                         "confidence": <float 0-100>,
                                         "reasoning": "<detailed explanation>",
                                         "recommended_actions": [<list of recommended actions>],
-                                        "red_flags": [<specific concerning patterns>]
+                                        "red_flags": [<specific concerning patterns>],
+                                        "anomaly_detected": <bool result from ML model>"
                                     }"""
             message1 = oci.generative_ai_inference.models.Message(
                 role = "SYSTEM",
@@ -203,7 +206,7 @@ class FraudDetectionService:
 
 
     
-    def _create_fraud_analysis_prompt(self, claim_data: Dict) -> str:
+    def _create_fraud_analysis_prompt(self, claim_data: Dict):
         """Create a detailed prompt for fraud analysis"""
         
         prompt = f"""
@@ -235,6 +238,8 @@ class FraudDetectionService:
         - Similar Claims in Area: {claim_data.get('similar_claims_in_area', 0)}
         - Provider: {claim_data.get('repair_provider', 'N/A')}
         
+        ANOMALY DETECTION MODEL RESULT:
+        - Anomaly Detection result: {claim_data.get('anomaly_detection_result', False)}
         Analyze this claim thoroughly and provide your assessment.
         """
 

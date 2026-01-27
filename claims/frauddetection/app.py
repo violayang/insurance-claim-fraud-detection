@@ -462,9 +462,10 @@ def load_claims_from_database():
                 return jsonify({'error': 'Failed to connect to database'}), 500
         
         # Load only non-approved claims from database (exclude 'Approved' and 'Closed')
-        print(f"Loading {limit} non-approved claims from {table_name}...")
+        print(f"Loading {limit} non-approved claims from V_ACTIVE_CLAIMS...")
         db_records = db_connector.load_claims_data(table_name, limit, include_approved=False)
-        
+        print(f"Loaded claims from {table_name}")
+
         if not db_records:
             # Fallback: Generate sample data for demonstration
             print("No non-approved claims in database, generating sample data...")
@@ -574,7 +575,7 @@ def load_claims_progressive():
                     medium_risk = 0
                     low_risk = 0
                     
-                    claims_to_analyze = transformed_claims[:min(40, len(transformed_claims))]
+                    claims_to_analyze = transformed_claims[:min(10, len(transformed_claims))]
                     
                     for i, claim in enumerate(claims_to_analyze):
                         try:
