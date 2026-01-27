@@ -141,7 +141,7 @@ class DatabaseConnector:
             print(f"Error getting tables: {e}")
             return ['CLAIMS', 'INSURANCE_CLAIMS', 'CLAIM_DETAILS']
     
-    def load_claims_data(self, table_name: str = None, limit: int = 2, include_approved: bool = False) -> List[Dict]:
+    def load_claims_data(self, table_name: str = None, limit: int = 5, include_approved: bool = False) -> List[Dict]:
         """
         Load claims data from database
         
@@ -163,8 +163,8 @@ class DatabaseConnector:
             if include_approved:
                 # Load all claims
                 query = f"""
-                    SELECT * FROM {table_name}
-                    WHERE LOWER(STATUS) = 'pending'
+                    SELECT * FROM V_CLAIMS_PENDING
+                    WHERE LOWER(CLAIM_STATUS) = 'pending'
                     AND ROWNUM <= 5
                     ORDER BY REPORTED_DATE DESC
                     
@@ -172,10 +172,10 @@ class DatabaseConnector:
             else:
                 # Only load non-approved claims (exclude 'Approved' and 'Closed' status)
                 query = f"""
-                    SELECT * FROM {table_name}
-                    WHERE STATUS NOT IN ('Approved', 'Closed')
+                    SELECT * FROM V_CLAIMS_PENDING
+                    WHERE lower(ClAIM_STATUS) NOT IN ('approved', 'closed')
                     AND ROWNUM <= 5
-                    ORDER BY INCIDENT_DATE DESC
+                    ORDER BY REPORTED_DATE DESC
                 """
             
             print(f"Loading claims with filter: include_approved={include_approved}")
