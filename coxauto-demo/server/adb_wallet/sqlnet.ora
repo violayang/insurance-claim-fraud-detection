@@ -1,2 +1,0 @@
-WALLET_LOCATION = (SOURCE = (METHOD = file) (METHOD_DATA = (DIRECTORY="/Users/aojah/Documents/GenAI-CoE/Agentic-Framework/source-code/agentic-ai-landing-zone-master/agentic-ai-landing-zone/apps/coxauto-demo/server/adb_wallet")))
-SSL_SERVER_DN_MATCH=yes
