@@ -1,4 +1,4 @@
-# StateFarm AI-Powered Fraud Detection Dashboard
+# AI-Powered Fraud Detection Dashboard
 
 An intelligent fraud detection system powered by OpenAI GPT-4, replacing heuristic-based logic with advanced machine learning for superior fraud analysis and insights.
 
@@ -240,7 +240,7 @@ response = self.client.chat.completions.create(
 
 ### Add Custom Fraud Indicators
 
-Enhance the system prompt in `_create_fraud_analysis_prompt()` to focus on specific indicators relevant to StateFarm's policies.
+Enhance the system prompt in `_create_fraud_analysis_prompt()` to focus on specific indicators relevant to insurance policies.
 
 ### Change OpenAI Model
 
@@ -289,7 +289,6 @@ OPENAI_MODEL=gpt-3.5-turbo         # Faster, more economical
 
 ## 📝 License
 
-This project is proprietary to StateFarm. All rights reserved.
 
 ## 👥 Support
 
