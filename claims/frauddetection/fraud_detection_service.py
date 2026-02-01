@@ -2,6 +2,8 @@
 StateFarm AI-Powered Fraud Detection Service
 Uses OCI GenAI for intelligent fraud analysis replacing heuristic logic
 """
+import logging
+logging.basicConfig(level=logging.INFO)
 
 import os
 import json
@@ -15,6 +17,8 @@ import oci
 from oci.signer import Signer
 import requests
 from oci.generative_ai_inference.models import ChatDetails
+import oci_openai
+from oci_openai import OciOpenAI, OciUserPrincipalAuth
 
 
 # Load environment variables
@@ -22,6 +26,7 @@ load_dotenv()
 
 # OCI Config
 config = oci.config.from_file("~/.oci/config") # replace with the location of your oci config file
+# config = oci.config.from_file((os.getcwd()+"/.oci/config"))   # oci config not in default path
 auth = Signer(
   tenancy=config['tenancy'],
   user=config['user'],
@@ -55,46 +60,37 @@ class FraudDetectionService:
                 )
                 self.oci_enabled = True
 
+            self.up_auth = OciUserPrincipalAuth(profile_name="chicago")
+            self.sync_client = OciOpenAI(
+                base_url= self.oci_genai_endpoint+"/20231130/actions/v1",  #"https://inference.generativeai.us-chicago-1.oci.oraclecloud.com/20231130/actions/v1"
+                auth=self.up_auth,
+                compartment_id=self.oci_compartment_id
+            )
+
         except Exception as e:
             print(f"Warning: OCI Generative AI not fully configured: {e}")
             self.oci_genai_client = None
 
-    def analyze_claim_test(self):
+
+    def test_agent_hub(self):
         """
-        test if OCI GenAI client is ready
+        test Agent Hub sdk
         """
         try:
-
-            chat_detail = oci.generative_ai_inference.models.ChatDetails()
-
-            content = oci.generative_ai_inference.models.TextContent()
-            content.text = "How do big insurance company deal with claim fraud detection?"
-            message = oci.generative_ai_inference.models.Message()
-            message.role = "USER"
-            message.content = [content]
-            chat_request = oci.generative_ai_inference.models.GenericChatRequest()
-            chat_request.api_format = oci.generative_ai_inference.models.BaseChatRequest.API_FORMAT_GENERIC
-            chat_request.messages = [message]
-            chat_request.max_tokens = 2048
-            chat_request.temperature = 1
-            chat_request.frequency_penalty = 0
-            chat_request.presence_penalty = 0
-            chat_request.top_p = 1
-            chat_request.top_k = 0
-
-            chat_detail.serving_mode = oci.generative_ai_inference.models.OnDemandServingMode(
-                model_id=self.oci_model_id)
-            chat_detail.chat_request = chat_request
-            chat_detail.compartment_id = self.oci_compartment_id
-
-            chat_response = self.oci_genai_client.chat(chat_detail)
-
-            # Print result
-            print("**************************Chat Result**************************")
-            print(chat_response.data.chat_response.choices[0].message.content)
+            completion = self.sync_client.chat.completions.create(
+                model="openai.gpt-oss-120b",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "How do I output all files in a directory using Python?"
+                    }
+                ]
+            )
+            print(completion.choices[0].message.content)
+            return completion.model_dump_json()
 
         except Exception as e:
-            print(f"Error: OCI Generative AI client if not ready: {e}")
+            print(f"Error: OCI Generative AI Agent Hub if not ready: {e}")
 
 
     def claim_fraud_detect(self, claim_df: pd.DataFrame) -> pd.DataFrame:
@@ -401,13 +397,13 @@ if __name__ == "__main__":
     }
 
     # print("Test OCI GenAI opt-oss-120b model")
-    # result = service.analyze_claim_test()
+    result = service.test_agent_hub()
     print("Analyzing claim with OpenAI...")
     # result = service.analyze_claim(sample_claim)
     # print(result)
 
-    inference_df = pd.read_csv("templates/sample_inference_data.csv")
-    print(service.claim_fraud_detect(inference_df.head(1)))
+    # inference_df = pd.read_csv("templates/sample_inference_data.csv")
+    # print(service.claim_fraud_detect(inference_df.head(1)))
 
     # print(json.dumps(result, indent=2))
 
