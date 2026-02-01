@@ -4,3 +4,7 @@ claims/.DS_Store
 .DS_Store
 claims/state-farm-portal/backend/.env
 coxauto-demo/server/.env
+claims/install-to-genai-coe.sh
+claims/state-farm-portal.tar.gz
+claims/state-farm-portal/
+coxauto-demo/
