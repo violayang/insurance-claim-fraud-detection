@@ -141,7 +141,7 @@ class DatabaseConnector:
             print(f"Error getting tables: {e}")
             return ['CLAIMS', 'INSURANCE_CLAIMS', 'CLAIM_DETAILS']
     
-    def load_claims_data(self, table_name: str = None, limit: int = 5, include_approved: bool = False) -> List[Dict]:
+    def load_claims_data(self, table_name: str = None, limit: int = 20, include_approved: bool = False) -> List[Dict]:
         """
         Load claims data from database
         
@@ -163,19 +163,26 @@ class DatabaseConnector:
             if include_approved:
                 # Load all claims
                 query = f"""
-                    SELECT * FROM V_CLAIMS_PENDING
-                    WHERE LOWER(CLAIM_STATUS) = 'pending'
-                    AND ROWNUM <= 5
-                    ORDER BY REPORTED_DATE DESC
-                    
+                    SELECT *
+                    FROM (
+                        SELECT *
+                        FROM V_CLAIMS_PENDING
+                        WHERE lower(CLAIM_STATUS) = 'pending'
+                        ORDER BY REPORTED_DATE DESC
+                        )
+                    WHERE ROWNUM <= {limit}
                 """
             else:
                 # Only load non-approved claims (exclude 'Approved' and 'Closed' status)
                 query = f"""
-                    SELECT * FROM V_CLAIMS_PENDING
-                    WHERE lower(ClAIM_STATUS) NOT IN ('approved', 'closed')
-                    AND ROWNUM <= 5
-                    ORDER BY REPORTED_DATE DESC
+                    SELECT *
+                    FROM (
+                        SELECT *
+                        FROM V_CLAIMS_PENDING
+                        WHERE lower(CLAIM_STATUS) NOT IN ('approved', 'closed')
+                        ORDER BY REPORTED_DATE DESC
+                    )
+                    WHERE ROWNUM <= {limit}
                 """
             
             print(f"Loading claims with filter: include_approved={include_approved}")
@@ -220,28 +227,111 @@ class DatabaseConnector:
         """
         # Map database columns to claim format
         # Handles various column name variations
+
+        # Calculate days_since_policy_start
+        effective_date_raw = record.get('EFFECTIVE_DATE')
+        effective_date = None
+        if effective_date_raw:
+            if isinstance(effective_date_raw, datetime):
+                effective_date = effective_date_raw
+            else:
+                try:
+                    from dateutil import parser
+                    effective_date = parser.parse(str(effective_date_raw))
+                except Exception:
+                    effective_date = None
+        if effective_date:
+            today = datetime.now()
+            days_since_policy_start = max((today - effective_date).days, 0)
+        else:
+            days_since_policy_start = 0
+
+        # Calculate years_as_customer
+        effective_date_raw = record.get('EFFECTIVE_DATE')
+        effective_date = None
+        if effective_date_raw:
+            if isinstance(effective_date_raw, datetime):
+                effective_date = effective_date_raw
+            else:
+                try:
+                    from dateutil import parser
+                    effective_date = parser.parse(str(effective_date_raw))
+                except Exception:
+                    effective_date = None
+        if effective_date:
+            today = datetime.now()
+            days_as_customer = (today - effective_date).days
+            years_as_customer = round(days_as_customer / 365.25, 2)
+        else:
+            years_as_customer = 0.0
+
+        # Calculate filing_delay_days
+        # Parse incident_date
+        incident_date_raw = record.get('INCIDENT_DATE')
+        incident_date = None
+        if incident_date_raw:
+            if isinstance(incident_date_raw, datetime):
+                incident_date = incident_date_raw
+            else:
+                try:
+                    from dateutil import parser
+                    incident_date = parser.parse(str(incident_date_raw))
+                except Exception:
+                    incident_date = None
+
+        # Parse reported_date (i.e., filing_date)
+        reported_date_raw = record.get('REPORTED_DATE')
+        reported_date = None
+        if reported_date_raw:
+            if isinstance(reported_date_raw, datetime):
+                reported_date = reported_date_raw
+            else:
+                try:
+                    from dateutil import parser
+                    reported_date = parser.parse(str(reported_date_raw))
+                except Exception:
+                    reported_date = None
+
+        if incident_date and reported_date:
+            filing_delay_days = max((reported_date - incident_date).days, 0)
+        else:
+            filing_delay_days = 0
+
         
         claim = {
             'claim_id': str(record.get('CLAIM_ID', record.get('ID', record.get('CLAIMID', 'DB-UNKNOWN')))),
             'claim_type': str(record.get('CLAIM_TYPE', record.get('TYPE', record.get('CLAIMTYPE', 'Unknown')))),
             'claim_amount': float(record.get('CLAIM_AMOUNT', record.get('AMOUNT', record.get('TOTAL_AMOUNT', 0)))),
             'incident_date': self._format_date(record.get('INCIDENT_DATE', record.get('DATE_OF_INCIDENT', record.get('INCIDENT_DT')))),
-            'filing_date': self._format_date(record.get('FILING_DATE', record.get('DATE_FILED', record.get('FILE_DATE')))),
-            'policy_holder': str(record.get('POLICY_HOLDER', record.get('POLICYHOLDER_NAME', record.get('HOLDER', 'Unknown')))),
-            'policy_number': str(record.get('POLICY_NUMBER', record.get('POLICY_NO', record.get('POLICY_NUM', 'Unknown')))),
-            'policy_start_date': self._format_date(record.get('POLICY_START_DATE', record.get('POLICY_START', record.get('POLICY_START_DT')))),
+            'filing_date': self._format_date(record.get('REPORTED_DATE', record.get('DATE_FILED', record.get('FILE_DATE')))),
+            'policy_holder': str(record.get('CUSTOMER_ID', record.get('POLICYHOLDER_NAME', record.get('CUSTOMER_ID', 'Unknown')))),
+            'policy_number': str(record.get('POLICY_ID', record.get('POLICY_NO', record.get('POLICY_NUM', 'Unknown')))),
+            'policy_start_date': self._format_date(record.get('EFFECTIVE_DATE', record.get('POLICY_START', record.get('POLICY_START_DT')))),
             'previous_claims_count': int(record.get('PREVIOUS_CLAIMS', record.get('PRIOR_CLAIMS', record.get('PREV_CLAIMS', 0)))),
-            'years_as_customer': float(record.get('YEARS_AS_CUSTOMER', record.get('CUSTOMER_YEARS', record.get('TENURE', 0)))),
+            'years_as_customer': years_as_customer,
+            # 'years_as_customer': float(record.get('YEARS_AS_CUSTOMER', record.get('CUSTOMER_YEARS', record.get('TENURE', 0)))),
             'incident_location': str(record.get('INCIDENT_LOCATION', record.get('LOCATION', record.get('ADDRESS', 'Unknown')))),
             'incident_description': str(record.get('INCIDENT_DESCRIPTION', record.get('DESCRIPTION', record.get('DETAILS', 'No description')))),
             'witnesses': str(record.get('WITNESSES', record.get('WITNESS_COUNT', record.get('HAS_WITNESSES', 'Unknown')))),
             'police_report_filed': str(record.get('POLICE_REPORT', record.get('POLICE_REPORT_FILED', record.get('REPORT_FILED', 'Unknown')))),
-            'days_since_policy_start': int(record.get('DAYS_SINCE_POLICY_START', record.get('POLICY_AGE_DAYS', 0))),
-            'filing_delay_days': int(record.get('FILING_DELAY', record.get('DAYS_TO_FILE', record.get('DELAY_DAYS', 0)))),
+            'days_since_policy_start': days_since_policy_start,
+            # 'days_since_policy_start': int(record.get('DAYS_SINCE_POLICY_START', record.get('POLICY_AGE_DAYS', 0))),
+            # 'filing_delay_days': int(record.get('FILING_DELAY', record.get('DAYS_TO_FILE', record.get('DELAY_DAYS', 0)))),
+            'filing_delay_days': filing_delay_days,
             'similar_claims_in_area': int(record.get('SIMILAR_CLAIMS', record.get('AREA_CLAIMS', 0))),
             'repair_provider': str(record.get('REPAIR_PROVIDER', record.get('PROVIDER', record.get('REPAIR_SHOP', 'Unknown'))))
         }
-        
+
+        # -------------------------------------------------
+        # <<< NEW: print the transformed claim to stdout >>>
+        # -------------------------------------------------
+        # Using json.dumps gives a nicely‑formatted view in the terminal.
+        # If you prefer logging, replace the print() with logger.info().
+        print("\n=== Transformed Claim ===")
+        print(json.dumps(claim, indent=2))
+        print("=========================\n")
+
+
         return claim
     
     def _format_date(self, date_value) -> str:

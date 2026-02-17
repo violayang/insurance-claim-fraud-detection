@@ -137,7 +137,7 @@ class FraudDetectionService:
             # Compose the chat detail for OCI GenAI gpt-oss model
             system_prompt = """You are an expert insurance fraud detection analyst for StateFarm. 
                                     Analyze claims for potential fraud indicators and provide detailed insights.
-                                    There's an additional Machine Learning model trained based on historical insurance claims to detect if a new submitted claim is potential fraud.
+                                    There's an additional Machine Learning model trained based on historical insurance claims to detect if a new submitted claim is outliers or not.
                                     Take the ML model result in consideration when analyzing claims.
                                     Return your analysis in JSON format with the following structure:
                                     {
@@ -145,7 +145,7 @@ class FraudDetectionService:
                                         "risk_level": "<LOW|MEDIUM|HIGH|CRITICAL>",
                                         "fraud_indicators": [<list of detected indicators>],
                                         "confidence": <float 0-100>,
-                                        "reasoning": "<detailed explanation>",
+                                        "reasoning": "<detailed explanation in bullet point>",
                                         "recommended_actions": [<list of recommended actions>],
                                         "red_flags": [<specific concerning patterns>],
                                         "anomaly_detected": <bool result from ML model>"

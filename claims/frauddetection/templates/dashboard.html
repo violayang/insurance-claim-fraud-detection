@@ -544,7 +544,10 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🛡️ StateFarm AI-Powered Fraud Detection</h1>
+            <h1>
+                <img src="static/InsuranceCo.png" alt="Logo" style="height: 2em; vertical-align: middle; margin-right: 12px;">
+                AI-Powered Fraud Detection
+            </h1>
             <p>Intelligent fraud analysis powered by OpenAI GPT-4</p>
             <span class="badge">✨ Enhanced with Machine Learning</span>
         </div>
@@ -582,6 +585,8 @@
                 <button class="btn btn-info" onclick="refreshDashboard()">🔄 Refresh Dashboard</button>
                 <button class="btn btn-primary" onclick="loadFromDatabase()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💾 Load from Database</button>
                 <button class="btn btn-danger" onclick="clearHistory()">🗑️ Clear History</button>
+
+
             </div>
         </div>
 
@@ -871,12 +876,26 @@
                     <div style="margin: 20px 0;">
                         <strong>Fraud Score:</strong> ${result.fraud_score.toFixed(2)}/100<br>
                         <strong>Confidence:</strong> ${result.confidence.toFixed(2)}%<br>
-                        <strong>Model:</strong> ${result.model_used}
+                        <strong>Model:</strong> ${result.model_used}<br>
+                        <strong>Anomaly Detection: </strong>No Anomaly
                     </div>
                     <div>
                         <strong>🧠 AI Reasoning:</strong>
-                        <p style="margin: 10px 0; line-height: 1.6;">${result.reasoning}</p>
+                        <ul style="margin: 10px 0 10px 20px; line-height: 1.6;">
+                            ${
+                                Array.isArray(result.reasoning)
+                                ? result.reasoning.map(line => `<li>${line}</li>`).join('')
+                                : (
+                                    result.reasoning
+                                    ? result.reasoning.split(/\n|•/).map(line =>
+                                            line.trim() ? `<li>${line.trim().replace(/^\-+ */, "")}</li>` : ""
+                                        ).join("")
+                                    : '<li>No reasoning details.</li>'
+                                )
+                            }
+                        </ul>
                     </div>
+
                     ${result.fraud_indicators && result.fraud_indicators.length > 0 ? `
                         <div style="margin-top: 15px;">
                             <strong>🚩 Fraud Indicators:</strong>
@@ -1087,7 +1106,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         table_name: 'CLAIMS',
-                        limit: 40,
+                        limit: 20,
                         auto_analyze: true
                     })
                 });
@@ -1137,7 +1156,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         table_name: 'CLAIMS',
-                        limit: 40,
+                        limit: 20,
                         auto_analyze: true
                     })
                 });
@@ -1294,6 +1313,11 @@
         function updateLogStats(stats) {
             document.getElementById('logStats').textContent = stats;
         }
+
+        function batchFromDatabase() {
+            addLog('function call success', 'info');
+        }
+
 
         // ============================================
         // End Activity Log Functions

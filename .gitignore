@@ -8,3 +8,4 @@ claims/install-to-genai-coe.sh
 claims/state-farm-portal.tar.gz
 claims/state-farm-portal/
 coxauto-demo/
+claims/frauddetection/__pycache__

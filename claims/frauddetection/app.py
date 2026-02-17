@@ -8,7 +8,7 @@ from flask_cors import CORS
 from fraud_detection_service import FraudDetectionService, HybridFraudDetectionService
 from database_connector import DatabaseConnector, QUERIES
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
 import random
 import subprocess
 import csv
@@ -19,7 +19,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Initialize services
-fraud_service = HybridFraudDetectionService()
+# fraud_service = HybridFraudDetectionService()
+fraud_service = FraudDetectionService()
 db_connector = DatabaseConnector()
 
 # In-memory storage for demo (use database in production)
@@ -152,7 +153,9 @@ def get_insights_summary():
             }), 200
         
         # Calculate summary statistics
-        summary = fraud_service.openai_service.get_insights_summary(analysis_history)
+        summary = fraud_service.get_insights_summary(analysis_history)
+
+        # summary = fraud_service.openai_service.get_insights_summary(analysis_history)   ## uncomment if use HybridFraudDetectionService
         
         return jsonify(summary), 200
         
@@ -438,6 +441,25 @@ def get_database_tables():
         return jsonify({'error': str(e)}), 500
 
 
+
+
+
+
+# ---------------- BATCH FROM DATABASE BUTTON - BEGIN---------------------
+@app.route('/api/database/batch-from-database', methods=['POST'])
+def batch_from_database():
+    """
+    Trigger batch operation from database.
+    This is a placeholder endpoint for the 'Batch from Database' button.
+    """
+    # You can add real logic here later
+    print("Batch from Database endpoint triggered.")
+    return jsonify({"message": "Batch from Database endpoint is not yet implemented."}), 200
+
+# ---------------- BATCH FROM DATABASE BUTTON - END---------------------
+
+
+
 @app.route('/api/database/load-claims', methods=['POST'])
 def load_claims_from_database():
     """
@@ -453,7 +475,7 @@ def load_claims_from_database():
     try:
         data = request.json
         table_name = data.get('table_name', 'CLAIMS')
-        limit = data.get('limit', 2)
+        limit = data.get('limit', 20)
         auto_analyze = data.get('auto_analyze', True)
         
         # Ensure connection
@@ -669,7 +691,8 @@ def generate_sample_claims_from_db(count: int = 10) -> List[Dict]:
             'POLICY_NUMBER': f'DB-POL-{200000 + i}',
             'POLICY_START_DATE': (datetime.now() - timedelta(days=random.randint(30, 1095))).strftime('%Y-%m-%d'),
             'PREVIOUS_CLAIMS': random.randint(0, 4),
-            'YEARS_AS_CUSTOMER': round(random.uniform(0.1, 10.0), 1),
+            # 'YEARS_AS_CUSTOMER': round(random.uniform(0.1, 10.0), 1),
+            'YEARS_AS_CUSTOMER': round(date.today()-(datetime.now() - timedelta(days=random.randint(30, 1095))), 1),
             'INCIDENT_LOCATION': random.choice(['Los Angeles, CA', 'Chicago, IL', 'New York, NY', 'Houston, TX']),
             'INCIDENT_DESCRIPTION': f'Database claim incident {i+1}',
             'WITNESSES': 'Yes' if random.random() > 0.5 else 'No',

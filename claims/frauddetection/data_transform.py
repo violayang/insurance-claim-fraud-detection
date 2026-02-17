@@ -20,7 +20,7 @@ def load_claims_as_dataframe(table_name: str = "CLAIMS", limit: int = 1000) -> p
     """
     # Initialize connector
     db = DatabaseConnector()
-    claim_records = db.load_claims_data(table_name=table_name, limit=limit)
+    claim_records = db.load_claims_data(table_name=table_name, limit=2)
     if not claim_records:
         print(f"No records loaded from table {table_name}.")
         return pd.DataFrame()  # return empty dataframe
@@ -69,7 +69,7 @@ def restructure_claims_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     # Load the claims table as a DataFrame
-    claims_df = load_claims_as_dataframe(table_name="CLAIMS", limit=1000)
+    claims_df = load_claims_as_dataframe(table_name="CLAIMS", limit=2)
 
     if not claims_df.empty:
         print("Raw DataFrame columns:", claims_df.columns.tolist())
