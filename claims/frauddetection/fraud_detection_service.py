@@ -219,25 +219,28 @@ class FraudDetectionService:
         - Policy Holder: {claim_data.get('policy_holder', 'N/A')}
         - Policy Number: {claim_data.get('policy_number', 'N/A')}
         - Policy Start Date: {claim_data.get('policy_start_date', 'N/A')}
-        - Previous Claims: {claim_data.get('previous_claims_count', 0)}
         - Years as Customer: {claim_data.get('years_as_customer', 0)}
         
         INCIDENT DETAILS:
         - Location: {claim_data.get('incident_location', 'N/A')}
         - Description: {claim_data.get('incident_description', 'N/A')}
-        - Witnesses: {claim_data.get('witnesses', 'N/A')}
         - Police Report: {claim_data.get('police_report_filed', 'N/A')}
+        - Summary: {claim_data.get('incident_summary', 'N/A')}
         
         ADDITIONAL CONTEXT:
         - Time Since Policy Start: {claim_data.get('days_since_policy_start', 0)} days
         - Claim Filing Delay: {claim_data.get('filing_delay_days', 0)} days
-        - Similar Claims in Area: {claim_data.get('similar_claims_in_area', 0)}
-        - Provider: {claim_data.get('repair_provider', 'N/A')}
         
         ANOMALY DETECTION MODEL RESULT:
-        - Anomaly Detection result: {claim_data.get('anomaly_detection_result', False)}
+        - Anomaly Detection result: {claim_data.get('anomaly_detection_result', False)}   
+        
         Analyze this claim thoroughly and provide your assessment.
         """
+        ## TODO: update Anomaly Detection result, Date of Incident, Location, Description, Police Report
+
+        # print("=== Claim Data Record ===\n")
+        # print(prompt)
+        # print("=========================\n")
 
         return prompt
     

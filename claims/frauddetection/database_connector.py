@@ -162,27 +162,58 @@ class DatabaseConnector:
             # Only load claims that are NOT approved (pending investigation/review)
             if include_approved:
                 # Load all claims
+
+                # ---------------- display records in ascending time order on UI ---------------
+                # query = f"""
+                #     SELECT *
+                #     FROM (
+                #         SELECT *
+                #         FROM V_CLAIMS_PENDING
+                #         WHERE lower(CLAIM_STATUS) = 'pending'
+                #         ORDER BY REPORTED_DATE DESC
+                #         )
+                #     WHERE ROWNUM <= {limit}
+                # """
+
+                # ---------------- display records in descending time order on UI ---------------
                 query = f"""
-                    SELECT *
-                    FROM (
-                        SELECT *
-                        FROM V_CLAIMS_PENDING
-                        WHERE lower(CLAIM_STATUS) = 'pending'
-                        ORDER BY REPORTED_DATE DESC
-                        )
-                    WHERE ROWNUM <= {limit}
-                """
+                            SELECT *
+                            FROM (
+                                SELECT *
+                                FROM V_CLAIMS_PENDING
+                                WHERE lower(CLAIM_STATUS) = 'pending'
+                                ORDER BY REPORTED_DATE DESC
+                                )
+                            WHERE ROWNUM <= {limit}
+                        """
             else:
                 # Only load non-approved claims (exclude 'Approved' and 'Closed' status)
+                # ---------------- display records in ascending time order on UI ---------------
+                # query = f"""
+                #     SELECT *
+                #     FROM (
+                #         SELECT *
+                #         FROM V_CLAIMS_PENDING
+                #         WHERE lower(CLAIM_STATUS) NOT IN ('approved', 'closed')
+                #         ORDER BY REPORTED_DATE DESC
+                #     )
+                #     WHERE ROWNUM <= {limit}
+                # """
+
+                # ---------------- display records in descending time order on UI ---------------
                 query = f"""
                     SELECT *
                     FROM (
                         SELECT *
-                        FROM V_CLAIMS_PENDING
-                        WHERE lower(CLAIM_STATUS) NOT IN ('approved', 'closed')
-                        ORDER BY REPORTED_DATE DESC
+                        FROM (
+                            SELECT *
+                            FROM V_CLAIMS_PENDING
+                            WHERE lower(CLAIM_STATUS) NOT IN ('approved', 'closed')
+                            ORDER BY REPORTED_DATE DESC
+                        )
+                        WHERE ROWNUM <= {limit}
                     )
-                    WHERE ROWNUM <= {limit}
+                    ORDER BY REPORTED_DATE ASC
                 """
             
             print(f"Loading claims with filter: include_approved={include_approved}")
@@ -267,7 +298,7 @@ class DatabaseConnector:
 
         # Calculate filing_delay_days
         # Parse incident_date
-        incident_date_raw = record.get('INCIDENT_DATE')
+        incident_date_raw = record.get('INCIDENT_DATE' or datetime(2026, 1, 2, 0, 0))
         incident_date = None
         if incident_date_raw:
             if isinstance(incident_date_raw, datetime):
@@ -302,24 +333,25 @@ class DatabaseConnector:
             'claim_id': str(record.get('CLAIM_ID', record.get('ID', record.get('CLAIMID', 'DB-UNKNOWN')))),
             'claim_type': str(record.get('CLAIM_TYPE', record.get('TYPE', record.get('CLAIMTYPE', 'Unknown')))),
             'claim_amount': float(record.get('CLAIM_AMOUNT', record.get('AMOUNT', record.get('TOTAL_AMOUNT', 0)))),
-            'incident_date': self._format_date(record.get('INCIDENT_DATE', record.get('DATE_OF_INCIDENT', record.get('INCIDENT_DT')))),
+            'incident_date': self._format_date(record.get('INCIDENT_DATE' or datetime(2026, 1, 2, 0, 0))),  ##TODO: update filing data from claims.ai_summary
             'filing_date': self._format_date(record.get('REPORTED_DATE', record.get('DATE_FILED', record.get('FILE_DATE')))),
             'policy_holder': str(record.get('CUSTOMER_ID', record.get('POLICYHOLDER_NAME', record.get('CUSTOMER_ID', 'Unknown')))),
             'policy_number': str(record.get('POLICY_ID', record.get('POLICY_NO', record.get('POLICY_NUM', 'Unknown')))),
             'policy_start_date': self._format_date(record.get('EFFECTIVE_DATE', record.get('POLICY_START', record.get('POLICY_START_DT')))),
-            'previous_claims_count': int(record.get('PREVIOUS_CLAIMS', record.get('PRIOR_CLAIMS', record.get('PREV_CLAIMS', 0)))),
-            'years_as_customer': years_as_customer,
-            # 'years_as_customer': float(record.get('YEARS_AS_CUSTOMER', record.get('CUSTOMER_YEARS', record.get('TENURE', 0)))),
+            # 'previous_claims_count': int(record.get('PREVIOUS_CLAIMS', record.get('PRIOR_CLAIMS', record.get('PREV_CLAIMS', 0)))),
+            # 'years_as_customer': years_as_customer,
+            'years_as_customer': float(record.get('TENURE') or 0),
             'incident_location': str(record.get('INCIDENT_LOCATION', record.get('LOCATION', record.get('ADDRESS', 'Unknown')))),
-            'incident_description': str(record.get('INCIDENT_DESCRIPTION', record.get('DESCRIPTION', record.get('DETAILS', 'No description')))),
-            'witnesses': str(record.get('WITNESSES', record.get('WITNESS_COUNT', record.get('HAS_WITNESSES', 'Unknown')))),
+            'incident_description': str(record.get('AI_SUMMARY', record.get('DESCRIPTION', record.get('DETAILS', 'No description')))),
+            # 'witnesses': str(record.get('WITNESSES', record.get('WITNESS_COUNT', record.get('HAS_WITNESSES', 'Unknown')))),
             'police_report_filed': str(record.get('POLICE_REPORT', record.get('POLICE_REPORT_FILED', record.get('REPORT_FILED', 'Unknown')))),
             'days_since_policy_start': days_since_policy_start,
             # 'days_since_policy_start': int(record.get('DAYS_SINCE_POLICY_START', record.get('POLICY_AGE_DAYS', 0))),
-            # 'filing_delay_days': int(record.get('FILING_DELAY', record.get('DAYS_TO_FILE', record.get('DELAY_DAYS', 0)))),
-            'filing_delay_days': filing_delay_days,
-            'similar_claims_in_area': int(record.get('SIMILAR_CLAIMS', record.get('AREA_CLAIMS', 0))),
-            'repair_provider': str(record.get('REPAIR_PROVIDER', record.get('PROVIDER', record.get('REPAIR_SHOP', 'Unknown'))))
+            'filing_delay_days': int(record.get('REPORT_DELAY_DAYS') or 0),
+            # 'filing_delay_days': filing_delay_days,
+            'incident_summary': str(record.get('AI_SUMMARY', 'Unknown')),
+            # 'similar_claims_in_area': int(record.get('SIMILAR_CLAIMS', record.get('AREA_CLAIMS', 0))),
+            # 'repair_provider': str(record.get('REPAIR_PROVIDER', record.get('PROVIDER', record.get('REPAIR_SHOP', 'Unknown'))))
         }
 
         # -------------------------------------------------
@@ -327,9 +359,9 @@ class DatabaseConnector:
         # -------------------------------------------------
         # Using json.dumps gives a nicely‑formatted view in the terminal.
         # If you prefer logging, replace the print() with logger.info().
-        print("\n=== Transformed Claim ===")
-        print(json.dumps(claim, indent=2))
-        print("=========================\n")
+        # print("\n=== Transformed Claim ===")
+        # print(json.dumps(claim, indent=2))
+        # print("=========================\n")
 
 
         return claim
@@ -346,13 +378,15 @@ class DatabaseConnector:
                 from dateutil import parser
                 parsed = parser.parse(date_value)
                 return parsed.strftime('%Y-%m-%d')
-            except:
+            except Exception as e:
+                print(f"Error formatting date: {e}")
                 return date_value
         
         try:
             # datetime object
             return date_value.strftime('%Y-%m-%d')
-        except:
+        except Exception as e:
+            print(f"Error formatting date: {e}")
             return datetime.now().strftime('%Y-%m-%d')
     
     def disconnect(self):

@@ -491,7 +491,7 @@ def load_claims_from_database():
         if not db_records:
             # Fallback: Generate sample data for demonstration
             print("No non-approved claims in database, generating sample data...")
-            db_records = generate_sample_claims_from_db(limit)
+            # db_records = generate_sample_claims_from_db(limit)
         
         print(f"Retrieved {len(db_records)} non-approved records from database")
         
@@ -500,6 +500,10 @@ def load_claims_from_database():
         for record in db_records:
             try:
                 claim = db_connector.transform_db_record_to_claim(record)
+                # dev - check claim object
+                # print("claim type: ", type(claim))
+                # print("claim: \n", claim)
+
                 transformed_claims.append(claim)
             except Exception as e:
                 print(f"Error transforming record: {e}")
@@ -573,9 +577,11 @@ def load_claims_progressive():
                 # Load only non-approved claims (exclude 'Approved' and 'Closed')
                 yield f"data: {json.dumps({'type': 'loading', 'message': f'Loading non-approved claims from {table_name}...'})}\n\n"
                 db_records = db_connector.load_claims_data(table_name, limit, include_approved=False)
-                
-                if not db_records:
-                    db_records = generate_sample_claims_from_db(limit)
+
+                ## TODO:  add code append 1)incident date, 2)location, 3)anyone injured,  4)police report filed
+
+                # if not db_records:
+                #     db_records = generate_sample_claims_from_db(limit)
                 
                 yield f"data: {json.dumps({'type': 'loaded', 'count': len(db_records), 'message': f'Loaded {len(db_records)} non-approved claims'})}\n\n"
                 
@@ -583,7 +589,9 @@ def load_claims_progressive():
                 transformed_claims = []
                 for i, record in enumerate(db_records):
                     try:
+                        print("record is ???\n", record)
                         claim = db_connector.transform_db_record_to_claim(record)
+                        print("claim is ???\n", claim)
                         transformed_claims.append(claim)
                         
                         yield f"data: {json.dumps({'type': 'claim_loaded', 'claim_id': claim.get('claim_id'), 'claim_type': claim.get('claim_type'), 'amount': claim.get('claim_amount'), 'current': i+1, 'total': len(db_records)})}\n\n"
@@ -597,7 +605,7 @@ def load_claims_progressive():
                     medium_risk = 0
                     low_risk = 0
                     
-                    claims_to_analyze = transformed_claims[:min(10, len(transformed_claims))]
+                    claims_to_analyze = transformed_claims[:min(limit, len(transformed_claims))]
                     
                     for i, claim in enumerate(claims_to_analyze):
                         try:
@@ -680,6 +688,7 @@ def generate_sample_claims_from_db(count: int = 10) -> List[Dict]:
         incident_date = (datetime.now() - timedelta(days=days_ago)).strftime('%Y-%m-%d')
         filing_delay = random.randint(0, 30)
         filing_date = (datetime.now() - timedelta(days=days_ago - filing_delay)).strftime('%Y-%m-%d')
+        policy_start_date = datetime.now() - timedelta(days=random.randint(30, 1095))
         
         claim = {
             'CLAIM_ID': f'DB-CLM-{1000 + i}',
@@ -689,10 +698,10 @@ def generate_sample_claims_from_db(count: int = 10) -> List[Dict]:
             'FILING_DATE': filing_date,
             'POLICY_HOLDER': f'DB Customer {i+1}',
             'POLICY_NUMBER': f'DB-POL-{200000 + i}',
-            'POLICY_START_DATE': (datetime.now() - timedelta(days=random.randint(30, 1095))).strftime('%Y-%m-%d'),
+            'POLICY_START_DATE': policy_start_date.strftime('%Y-%m-%d'),
             'PREVIOUS_CLAIMS': random.randint(0, 4),
             # 'YEARS_AS_CUSTOMER': round(random.uniform(0.1, 10.0), 1),
-            'YEARS_AS_CUSTOMER': round(date.today()-(datetime.now() - timedelta(days=random.randint(30, 1095))), 1),
+            'YEARS_AS_CUSTOMER': round((datetime.now().date() - policy_start_date.date()).days / 365.25, 2),
             'INCIDENT_LOCATION': random.choice(['Los Angeles, CA', 'Chicago, IL', 'New York, NY', 'Houston, TX']),
             'INCIDENT_DESCRIPTION': f'Database claim incident {i+1}',
             'WITNESSES': 'Yes' if random.random() > 0.5 else 'No',

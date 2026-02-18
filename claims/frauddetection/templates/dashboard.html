@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StateFarm AI-Powered Fraud Detection Dashboard</title>
+    <title>InsuranceCo. Claim Fraud Detection Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
@@ -546,7 +546,7 @@
         <div class="header">
             <h1>
                 <img src="static/InsuranceCo.png" alt="Logo" style="height: 2em; vertical-align: middle; margin-right: 12px;">
-                AI-Powered Fraud Detection
+                Insurance Claim Fraud Detection
             </h1>
             <p>Intelligent fraud analysis powered by OpenAI GPT-4</p>
             <span class="badge">✨ Enhanced with Machine Learning</span>
@@ -581,12 +581,12 @@
             <h3>🎯 Quick Actions</h3>
             <div class="action-buttons">
                 <button class="btn btn-primary" onclick="toggleClaimForm()">📝 Analyze New Claim</button>
-                <button class="btn btn-success" onclick="generateTestData()">🎲 Generate Test Data</button>
-                <button class="btn btn-info" onclick="refreshDashboard()">🔄 Refresh Dashboard</button>
                 <button class="btn btn-primary" onclick="loadFromDatabase()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">💾 Load from Database</button>
+                <!--
+                <button class="btn btn-success" onclick="generateTestData()">🎲 Generate Test Data</button>
+                -->
+                <button class="btn btn-info" onclick="refreshDashboard()">🔄 Refresh Dashboard</button>
                 <button class="btn btn-danger" onclick="clearHistory()">🗑️ Clear History</button>
-
-
             </div>
         </div>
 
