@@ -111,8 +111,6 @@ class FraudDetectionService:
             print(f"Error transform claim data: {e}")
 
 
-
-
         
     def analyze_claim(self, claim_data: Dict) -> Dict:
         """
@@ -135,7 +133,7 @@ class FraudDetectionService:
             # print(" The claim prompt :\n", prompt)
 
             # Compose the chat detail for OCI GenAI gpt-oss model
-            system_prompt = """You are an expert insurance fraud detection analyst for StateFarm. 
+            system_prompt = """You are an expert insurance fraud detection analyst for InsuranceCo. 
                                     Analyze claims for potential fraud indicators and provide detailed insights.
                                     There's an additional Machine Learning model trained based on historical insurance claims to detect if a new submitted claim is outliers or not.
                                     Take the ML model result in consideration when analyzing claims.
@@ -145,7 +143,7 @@ class FraudDetectionService:
                                         "risk_level": "<LOW|MEDIUM|HIGH|CRITICAL>",
                                         "fraud_indicators": [<list of detected indicators>],
                                         "confidence": <float 0-100>,
-                                        "reasoning": "<detailed explanation in bullet point>",
+                                        "reasoning": "[<list of explanations>]",
                                         "recommended_actions": [<list of recommended actions>],
                                         "red_flags": [<specific concerning patterns>],
                                         "anomaly_detected": <bool result from ML model>"
@@ -190,6 +188,20 @@ class FraudDetectionService:
             analysis['model_used'] = 'oci-genai-gpt'
             analysis['model_version'] = self.oci_model_id
 
+            # Normalize anomaly_label presentation
+            anomaly_val = claim_data.get('anomaly_label', 0)
+            if isinstance(anomaly_val, str) and anomaly_val.isdigit():
+                anomaly_val = int(anomaly_val)
+            elif isinstance(anomaly_val, bool):
+                anomaly_val = int(anomaly_val)
+            try:
+                anomaly_val = int(anomaly_val)
+            except Exception:
+                anomaly_val = 0  # fallback
+
+            analysis['anomaly_label'] = "Anomaly Detected" if anomaly_val == 1 else "No Anomaly"
+
+
             return analysis
 
         except Exception as e:
@@ -232,7 +244,7 @@ class FraudDetectionService:
         - Claim Filing Delay: {claim_data.get('filing_delay_days', 0)} days
         
         ANOMALY DETECTION MODEL RESULT:
-        - Anomaly Detection result: {claim_data.get('anomaly_detection_result', False)}   
+        - Anomaly Detection result: {claim_data.get('anomaly_label', False)}   
         
         Analyze this claim thoroughly and provide your assessment.
         """

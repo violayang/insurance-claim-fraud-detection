@@ -877,24 +877,17 @@
                         <strong>Fraud Score:</strong> ${result.fraud_score.toFixed(2)}/100<br>
                         <strong>Confidence:</strong> ${result.confidence.toFixed(2)}%<br>
                         <strong>Model:</strong> ${result.model_used}<br>
-                        <strong>Anomaly Detection: </strong>No Anomaly
+                        <strong>Anomaly Detection: </strong>${result.anomaly_label}<br>
                     </div>
-                    <div>
-                        <strong>🧠 AI Reasoning:</strong>
-                        <ul style="margin: 10px 0 10px 20px; line-height: 1.6;">
-                            ${
-                                Array.isArray(result.reasoning)
-                                ? result.reasoning.map(line => `<li>${line}</li>`).join('')
-                                : (
-                                    result.reasoning
-                                    ? result.reasoning.split(/\n|•/).map(line =>
-                                            line.trim() ? `<li>${line.trim().replace(/^\-+ */, "")}</li>` : ""
-                                        ).join("")
-                                    : '<li>No reasoning details.</li>'
-                                )
-                            }
-                        </ul>
-                    </div>
+
+                    ${result.reasoning && result.reasoning.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <strong>🧠 AI Reasoning:</strong>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                ${result.reasoning.map(action => `<li style="margin-bottom: 5px;">${action}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
 
                     ${result.fraud_indicators && result.fraud_indicators.length > 0 ? `
                         <div style="margin-top: 15px;">

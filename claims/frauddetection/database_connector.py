@@ -180,7 +180,7 @@ class DatabaseConnector:
                             SELECT *
                             FROM (
                                 SELECT *
-                                FROM V_CLAIMS_PENDING
+                                FROM V_CLAIM_WITH_ANOMALY_LABEL
                                 WHERE lower(CLAIM_STATUS) = 'pending'
                                 ORDER BY REPORTED_DATE DESC
                                 )
@@ -207,7 +207,7 @@ class DatabaseConnector:
                         SELECT *
                         FROM (
                             SELECT *
-                            FROM V_CLAIMS_PENDING
+                            FROM V_CLAIM_WITH_ANOMALY_LABEL
                             WHERE lower(CLAIM_STATUS) NOT IN ('approved', 'closed')
                             ORDER BY REPORTED_DATE DESC
                         )
@@ -350,6 +350,7 @@ class DatabaseConnector:
             'filing_delay_days': int(record.get('REPORT_DELAY_DAYS') or 0),
             # 'filing_delay_days': filing_delay_days,
             'incident_summary': str(record.get('AI_SUMMARY', 'Unknown')),
+            'anomaly_label': int(record.get('ANOMALY_LABEL' or 0))
             # 'similar_claims_in_area': int(record.get('SIMILAR_CLAIMS', record.get('AREA_CLAIMS', 0))),
             # 'repair_provider': str(record.get('REPAIR_PROVIDER', record.get('PROVIDER', record.get('REPAIR_SHOP', 'Unknown'))))
         }
