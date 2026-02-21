@@ -239,6 +239,11 @@ class FraudDetectionService:
         - Police Report: {claim_data.get('police_report_filed', 'N/A')}
         - Summary: {claim_data.get('incident_summary', 'N/A')}
         
+        DAMAGE DETAILS:
+        - Evidence Provided: {claim_data.get('document_provided', 'N/A')}
+        - Damage Type: {claim_data.get('damage_type', 'N/A')}     
+        - Damage Description: {claim_data.get('damage_description', 'N/A')}
+        
         ADDITIONAL CONTEXT:
         - Time Since Policy Start: {claim_data.get('days_since_policy_start', 0)} days
         - Claim Filing Delay: {claim_data.get('filing_delay_days', 0)} days
@@ -248,7 +253,9 @@ class FraudDetectionService:
         
         Analyze this claim thoroughly and provide your assessment.
         """
-        ## TODO: update Anomaly Detection result, Date of Incident, Location, Description, Police Report
+
+        ##TODO: add claim.damage_type, claim.damage_detected, claim.damage_description
+
 
         # print("=== Claim Data Record ===\n")
         # print(prompt)

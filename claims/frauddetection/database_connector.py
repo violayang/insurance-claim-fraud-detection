@@ -328,6 +328,13 @@ class DatabaseConnector:
         else:
             filing_delay_days = 0
 
+        # extract damage type and description
+        damage_detail = json.loads(str(record.get('DAMAGE_DESCRIPTION') or
+                                     '''{"damage_detected": "Unknown","damage_types": ["Unknown"]}'''))
+        damage_description = damage_detail['damage_detected']
+        damage_type = damage_detail['damage_types']
+
+
         
         claim = {
             'claim_id': str(record.get('CLAIM_ID', record.get('ID', record.get('CLAIMID', 'DB-UNKNOWN')))),
@@ -350,7 +357,10 @@ class DatabaseConnector:
             'filing_delay_days': int(record.get('REPORT_DELAY_DAYS') or 0),
             # 'filing_delay_days': filing_delay_days,
             'incident_summary': str(record.get('AI_SUMMARY', 'Unknown')),
-            'anomaly_label': int(record.get('ANOMALY_LABEL' or 0))
+            'anomaly_label': int(record.get('ANOMALY_LABEL' or 0)),
+            'document_provided': str(record.get('AI_DAMAGE_DETECTED') or'N'),
+            'damage_type': str(damage_type), ## TODO: add code to extract damage type from dict
+            'damage_description': str(damage_description),       ##TODO: add code to extract damage description
             # 'similar_claims_in_area': int(record.get('SIMILAR_CLAIMS', record.get('AREA_CLAIMS', 0))),
             # 'repair_provider': str(record.get('REPAIR_PROVIDER', record.get('PROVIDER', record.get('REPAIR_SHOP', 'Unknown'))))
         }

@@ -589,9 +589,9 @@ def load_claims_progressive():
                 transformed_claims = []
                 for i, record in enumerate(db_records):
                     try:
-                        print("record is ???\n", record)
+                        # print("record is ???\n", record)
                         claim = db_connector.transform_db_record_to_claim(record)
-                        print("claim is ???\n", claim)
+                        # print("claim is ???\n", claim)
                         transformed_claims.append(claim)
                         
                         yield f"data: {json.dumps({'type': 'claim_loaded', 'claim_id': claim.get('claim_id'), 'claim_type': claim.get('claim_type'), 'amount': claim.get('claim_amount'), 'current': i+1, 'total': len(db_records)})}\n\n"
